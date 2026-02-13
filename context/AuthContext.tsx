@@ -1,4 +1,5 @@
 import { useRouter, useSegments } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { authService, getAuthToken, setAuthToken } from '../services/api';
 
@@ -30,10 +31,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const checkAuth = async () => {
             try {
                 const token = await getAuthToken();
+                const userData = await SecureStore.getItemAsync('user_data');
                 if (token) {
-                    // Ideally, validate token or fetch user profile here
-                    // For now, we assume if token exists, user is logged in
-                    setUser({ token });
+                    if (userData) {
+                        setUser(JSON.parse(userData));
+                    } else {
+                        // Fallback if we have token but no user data (e.g. from previous version of app)
+                        // Ideally we would fetch profile here. For now, we set a temporary state or just token.
+                        setUser({ token });
+                    }
                 }
             } catch (error) {
                 console.error('Auth check failed:', error);
@@ -65,7 +71,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         try {
             const data = await authService.login(credentials);
             await setAuthToken(data.access_token);
-            setUser(data.user || { token: data.access_token }); // Fallback if user object is missing
+            if (data.user) {
+                await SecureStore.setItemAsync('user_data', JSON.stringify(data.user));
+                setUser(data.user);
+            } else {
+                setUser({ token: data.access_token });
+            }
         } catch (error) {
             throw error;
         }
@@ -84,6 +95,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const signOut = async () => {
         await authService.logout();
+        await SecureStore.deleteItemAsync('user_data');
         setUser(null);
     };
 

@@ -1,9 +1,9 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import { Plus, ShoppingCart } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
+import { useCart } from '../../context/CartContext';
 import { kitchenService } from '../../services/api';
 
 export default function KitchenDetailsScreen() {
@@ -11,7 +11,8 @@ export default function KitchenDetailsScreen() {
     const [kitchen, setKitchen] = useState<any>(null);
     const [menuItems, setMenuItems] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [cart, setCart] = useState<{ [key: string]: number }>({});
+    // const [cart, setCart] = useState<{ [key: string]: number }>({}); // Removed local cart
+    const { addToCart, count } = useCart(); // Use global cart
     const router = useRouter();
 
     useEffect(() => {
@@ -23,13 +24,7 @@ export default function KitchenDetailsScreen() {
                 ]);
                 setKitchen(kitchenData);
                 setMenuItems(menuData);
-
-                // Load existing cart if any (simple local state for now, ideally Context or Redux)
-                const savedCart = await SecureStore.getItemAsync('cart');
-                if (savedCart) {
-                    setCart(JSON.parse(savedCart));
-                }
-
+                // Cart loading is handled by CartContext
             } catch (error) {
                 console.error('Failed to fetch kitchen details', error);
             } finally {
@@ -39,40 +34,9 @@ export default function KitchenDetailsScreen() {
         fetchData();
     }, [id]);
 
-    const addToCart = async (item: any) => {
-        const newCart = { ...cart };
-        // Check if item is from same kitchen. For simplicity, we clear cart if switching kitchens
-        // or we just store kitchenId with cart. 
-        // Let's assume simpler logic: Single Kitchen Cart for MVP
-        const currentKitchenId = await SecureStore.getItemAsync('cart_kitchen_id');
-
-        if (currentKitchenId && currentKitchenId !== id) {
-            Alert.alert(
-                'Start new order?',
-                'You have items from another kitchen in your cart. clear them?',
-                [
-                    { text: 'Cancel', style: 'cancel' },
-                    {
-                        text: 'Yes',
-                        onPress: async () => {
-                            const freshCart = { [item.id]: 1 };
-                            setCart(freshCart);
-                            await SecureStore.setItemAsync('cart', JSON.stringify(freshCart));
-                            await SecureStore.setItemAsync('cart_kitchen_id', id as string);
-                        }
-                    }
-                ]
-            );
-            return;
-        }
-
-        newCart[item.id] = (newCart[item.id] || 0) + 1;
-        setCart(newCart);
-        await SecureStore.setItemAsync('cart', JSON.stringify(newCart));
-        await SecureStore.setItemAsync('cart_kitchen_id', id as string);
+    const handleAddToCart = async (item: any) => {
+        await addToCart(item, 1, id as string);
     };
-
-    const getTotalItems = () => Object.values(cart).reduce((a, b) => a + b, 0);
 
     const renderMenuItem = ({ item }: { item: any }) => (
         <View style={styles.menuItem}>
@@ -82,7 +46,7 @@ export default function KitchenDetailsScreen() {
                 <Text style={styles.menuDesc} numberOfLines={2}>{item.description}</Text>
                 <View style={styles.priceRow}>
                     <Text style={styles.price}>${item.price}</Text>
-                    <TouchableOpacity style={styles.addButton} onPress={() => addToCart(item)}>
+                    <TouchableOpacity style={styles.addButton} onPress={() => handleAddToCart(item)}>
                         <Plus size={16} color="white" />
                         <Text style={styles.addButtonText}>Add</Text>
                     </TouchableOpacity>
@@ -111,16 +75,16 @@ export default function KitchenDetailsScreen() {
             <FlatList
                 data={menuItems}
                 renderItem={renderMenuItem}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item: any) => item.id}
                 contentContainerStyle={styles.listContent}
             />
 
-            {getTotalItems() > 0 && (
+            {count > 0 && (
                 <View style={styles.floatingCartContainer}>
                     <TouchableOpacity style={styles.floatingCart} onPress={() => router.push('/cart')}>
                         <View style={styles.cartInfo}>
                             <View style={styles.badge}>
-                                <Text style={styles.badgeText}>{getTotalItems()}</Text>
+                                <Text style={styles.badgeText}>{count}</Text>
                             </View>
                             <Text style={styles.viewCartText}>View Cart</Text>
                         </View>

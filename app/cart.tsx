@@ -1,54 +1,15 @@
 import { useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
-import { CreditCard, Trash2 } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import { CreditCard, Minus, Plus, Trash2 } from 'lucide-react-native';
+import React, { useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../constants/Colors';
-import { kitchenService, orderService } from '../services/api';
+import { useCart } from '../context/CartContext';
+import { orderService } from '../services/api';
 
 export default function CartScreen() {
-    const [cartTitle, setCartTitle] = useState('My Order');
-    const [kitchenId, setKitchenId] = useState<string | null>(null);
-    const [menuItems, setMenuItems] = useState<any[]>([]);
-    const [cartItems, setCartItems] = useState<{ item: any, quantity: number }[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { cartItems, kitchenId, totalAmount, updateQuantity, removeFromCart, clearCart } = useCart();
     const [submitting, setSubmitting] = useState(false);
     const router = useRouter();
-
-    useEffect(() => {
-        loadCart();
-    }, []);
-
-    const loadCart = async () => {
-        try {
-            const kId = await SecureStore.getItemAsync('cart_kitchen_id');
-            const savedCart = await SecureStore.getItemAsync('cart');
-            setKitchenId(kId);
-
-            if (kId && savedCart) {
-                const cartCounts = JSON.parse(savedCart);
-                const menuData = await kitchenService.getMenu(kId);
-                setMenuItems(menuData);
-
-                const items = [];
-                for (const [itemId, quantity] of Object.entries(cartCounts)) {
-                    const item = menuData.find((m: any) => m.id === itemId);
-                    if (item) {
-                        items.push({ item, quantity: Number(quantity) });
-                    }
-                }
-                setCartItems(items);
-            }
-        } catch (error) {
-            console.error('Failed to load cart', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const calculateTotal = () => {
-        return cartItems.reduce((total, { item, quantity }) => total + (Number(item.price) * quantity), 0);
-    };
 
     const handlePlaceOrder = async () => {
         if (!kitchenId || cartItems.length === 0) return;
@@ -64,9 +25,7 @@ export default function CartScreen() {
             };
 
             await orderService.create(orderPayload);
-
-            await SecureStore.deleteItemAsync('cart');
-            await SecureStore.deleteItemAsync('cart_kitchen_id');
+            await clearCart();
 
             Alert.alert('Success', 'Order placed successfully!', [
                 { text: 'OK', onPress: () => router.replace('/(tabs)/orders') }
@@ -78,30 +37,37 @@ export default function CartScreen() {
         }
     };
 
-    const handleClearCart = async () => {
-        await SecureStore.deleteItemAsync('cart');
-        await SecureStore.deleteItemAsync('cart_kitchen_id');
-        setCartItems([]);
-        setKitchenId(null);
-    };
-
     const renderCartItem = ({ item }: { item: { item: any, quantity: number } }) => (
         <View style={styles.cartItem}>
             <View style={styles.itemInfo}>
                 <Text style={styles.itemName}>{item.item.name}</Text>
-                <Text style={styles.itemPrice}>${Number(item.item.price).toFixed(2)} x {item.quantity}</Text>
+                <Text style={styles.itemPrice}>${Number(item.item.price).toFixed(2)}</Text>
             </View>
-            <Text style={styles.itemTotal}>${(Number(item.item.price) * item.quantity).toFixed(2)}</Text>
+
+            <View style={styles.quantityContainer}>
+                <TouchableOpacity
+                    style={styles.quantityButton}
+                    onPress={() => updateQuantity(item.item.id, item.quantity - 1)}
+                >
+                    <Minus size={16} color={Colors.dark.text} />
+                </TouchableOpacity>
+                <Text style={styles.quantityText}>{item.quantity}</Text>
+                <TouchableOpacity
+                    style={styles.quantityButton}
+                    onPress={() => updateQuantity(item.item.id, item.quantity + 1)}
+                >
+                    <Plus size={16} color={Colors.dark.text} />
+                </TouchableOpacity>
+            </View>
+
+            <View style={styles.totalContainer}>
+                <Text style={styles.itemTotal}>${(Number(item.item.price) * item.quantity).toFixed(2)}</Text>
+                <TouchableOpacity onPress={() => removeFromCart(item.item.id)} style={styles.removeButton}>
+                    <Trash2 color={Colors.dark.danger} size={20} />
+                </TouchableOpacity>
+            </View>
         </View>
     );
-
-    if (loading) {
-        return (
-            <View style={styles.centered}>
-                <ActivityIndicator size="large" color={Colors.dark.primary} />
-            </View>
-        );
-    }
 
     if (cartItems.length === 0) {
         return (
@@ -124,8 +90,8 @@ export default function CartScreen() {
                 ListHeaderComponent={
                     <View style={styles.header}>
                         <Text style={styles.headerTitle}>Order Summary</Text>
-                        <TouchableOpacity onPress={handleClearCart}>
-                            <Trash2 color={Colors.dark.danger} size={20} />
+                        <TouchableOpacity onPress={clearCart}>
+                            <Text style={styles.clearText}>Clear Cart</Text>
                         </TouchableOpacity>
                     </View>
                 }
@@ -134,7 +100,7 @@ export default function CartScreen() {
             <View style={styles.footer}>
                 <View style={styles.totalRow}>
                     <Text style={styles.totalLabel}>Total</Text>
-                    <Text style={styles.totalAmount}>${calculateTotal().toFixed(2)}</Text>
+                    <Text style={styles.totalAmount}>${totalAmount.toFixed(2)}</Text>
                 </View>
 
                 <TouchableOpacity
@@ -201,9 +167,13 @@ const styles = StyleSheet.create({
     },
     cartItem: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
+        backgroundColor: Colors.dark.card,
+        padding: 12,
+        borderRadius: 12,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: Colors.dark.border,
     },
     itemInfo: {
         flex: 1,
@@ -216,12 +186,43 @@ const styles = StyleSheet.create({
     itemPrice: {
         fontSize: 14,
         color: Colors.dark.textSecondary,
-        marginTop: 2,
+        marginTop: 4,
+    },
+    quantityContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginHorizontal: 12,
+        backgroundColor: Colors.dark.background,
+        borderRadius: 8,
+        padding: 4,
+    },
+    quantityButton: {
+        padding: 4,
+    },
+    quantityText: {
+        color: Colors.dark.text,
+        fontSize: 14,
+        fontWeight: 'bold',
+        marginHorizontal: 8,
+        minWidth: 20,
+        textAlign: 'center',
+    },
+    totalContainer: {
+        alignItems: 'flex-end',
     },
     itemTotal: {
         fontSize: 16,
         fontWeight: 'bold',
         color: Colors.dark.text,
+        marginBottom: 4,
+    },
+    removeButton: {
+        padding: 4,
+    },
+    clearText: {
+        color: Colors.dark.danger,
+        fontSize: 14,
+        fontWeight: '500',
     },
     footer: {
         padding: 24,
