@@ -16,8 +16,14 @@ export default function CartScreen() {
 
         setSubmitting(true);
         try {
+            // Calculate tomorrow's date as YYYY-MM-DD
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const scheduledFor = tomorrow.toISOString().split('T')[0];
+
             const orderPayload = {
                 kitchen_id: kitchenId,
+                scheduled_for: scheduledFor,
                 items: cartItems.map(({ item, quantity }) => ({
                     food_item_id: item.id,
                     quantity
@@ -31,16 +37,13 @@ export default function CartScreen() {
                 {
                     text: 'OK',
                     onPress: () => {
-                        // Dismiss the modal first, then navigate to the existing tab
-                        // preventing stack replacement issues that might cause app close/crash
-                        if (router.canDismiss()) {
-                            router.dismiss();
-                        }
-                        router.navigate('/(tabs)/orders');
+                        // Use replace to prevent stacking issues
+                        router.replace('/(tabs)/orders');
                     }
                 }
             ]);
         } catch (error: any) {
+            console.error(error);
             Alert.alert('Error', error.response?.data?.message || 'Failed to place order');
         } finally {
             setSubmitting(false);
@@ -51,7 +54,7 @@ export default function CartScreen() {
         <View style={styles.cartItem}>
             <View style={styles.itemInfo}>
                 <Text style={styles.itemName}>{item.item.name}</Text>
-                <Text style={styles.itemPrice}>${Number(item.item.price).toFixed(2)}</Text>
+                <Text style={styles.itemPrice}>₹{Number(item.item.price).toFixed(2)}</Text>
             </View>
 
             <View style={styles.quantityContainer}>
@@ -71,7 +74,7 @@ export default function CartScreen() {
             </View>
 
             <View style={styles.totalContainer}>
-                <Text style={styles.itemTotal}>${(Number(item.item.price) * item.quantity).toFixed(2)}</Text>
+                <Text style={styles.itemTotal}>₹{(Number(item.item.price) * item.quantity).toFixed(2)}</Text>
                 <TouchableOpacity onPress={() => removeFromCart(item.item.id)} style={styles.removeButton}>
                     <Trash2 color={Colors.dark.danger} size={20} />
                 </TouchableOpacity>
@@ -110,7 +113,7 @@ export default function CartScreen() {
             <View style={styles.footer}>
                 <View style={styles.totalRow}>
                     <Text style={styles.totalLabel}>Total</Text>
-                    <Text style={styles.totalAmount}>${totalAmount.toFixed(2)}</Text>
+                    <Text style={styles.totalAmount}>₹{totalAmount.toFixed(2)}</Text>
                 </View>
 
                 <TouchableOpacity

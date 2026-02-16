@@ -1,26 +1,93 @@
-import { LogOut, UserCircle } from 'lucide-react-native';
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { LogOut, Mail, MapPin, Phone, RefreshCw, UserCircle } from 'lucide-react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { useAuth } from '../../context/AuthContext';
+import { userService } from '../../services/api';
 
 export default function ProfileScreen() {
     const { signOut, user } = useAuth();
+    const [profile, setProfile] = useState<any>(null);
+    const [refreshing, setRefreshing] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    const fetchProfile = async () => {
+        try {
+            const data = await userService.getProfile();
+            setProfile(data);
+        } catch (error) {
+            console.log('Failed to fetch profile', error);
+            // Fallback to auth context user if available
+            if (user) setProfile(user);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchProfile();
+    }, []);
+
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        fetchProfile();
+    }, []);
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <UserCircle size={80} color={Colors.dark.text} strokeWidth={1} />
-                <Text style={styles.username}>Client User</Text>
-                <Text style={styles.email}>client@example.com</Text>
-            </View>
-
-            <View style={styles.section}>
-                <TouchableOpacity style={styles.menuItem} onPress={signOut}>
-                    <LogOut size={20} color={Colors.dark.danger} />
-                    <Text style={[styles.menuText, { color: Colors.dark.danger }]}>Sign Out</Text>
+            <View style={styles.headerBar}>
+                <Text style={styles.headerTitle}>My Profile</Text>
+                <TouchableOpacity onPress={onRefresh} style={styles.refreshButton}>
+                    <RefreshCw size={20} color={Colors.dark.primary} />
                 </TouchableOpacity>
             </View>
+
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.dark.primary} />
+                }
+            >
+                <View style={styles.profileCard}>
+                    <View style={styles.avatarContainer}>
+                        <UserCircle size={80} color={Colors.dark.text} strokeWidth={1} />
+                    </View>
+
+                    {loading ? (
+                        <ActivityIndicator color={Colors.dark.primary} style={{ marginTop: 20 }} />
+                    ) : (
+                        <>
+                            <Text style={styles.username}>{profile?.name || profile?.username || 'User'}</Text>
+                            <Text style={styles.roleBadge}>{profile?.role || 'CLIENT'}</Text>
+
+                            <View style={styles.infoSection}>
+                                <View style={styles.infoRow}>
+                                    <Mail size={18} color={Colors.dark.textSecondary} />
+                                    <Text style={styles.infoText}>{profile?.email || 'No email'}</Text>
+                                </View>
+                                <View style={styles.infoRow}>
+                                    <Phone size={18} color={Colors.dark.textSecondary} />
+                                    <Text style={styles.infoText}>{profile?.phone_number || 'No phone'}</Text>
+                                </View>
+                                {profile?.address && (
+                                    <View style={styles.infoRow}>
+                                        <MapPin size={18} color={Colors.dark.textSecondary} />
+                                        <Text style={styles.infoText}>{profile.address}</Text>
+                                    </View>
+                                )}
+                            </View>
+                        </>
+                    )}
+                </View>
+
+                <View style={styles.actionSection}>
+                    <TouchableOpacity style={styles.menuItem} onPress={signOut}>
+                        <LogOut size={20} color={Colors.dark.danger} />
+                        <Text style={[styles.menuText, { color: Colors.dark.danger }]}>Sign Out</Text>
+                    </TouchableOpacity>
+                </View>
+            </ScrollView>
         </View>
     );
 }
@@ -29,25 +96,80 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: Colors.dark.background,
-        paddingTop: 60,
-        paddingHorizontal: 24,
+        paddingTop: 50,
     },
-    header: {
+    headerBar: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 40,
+        paddingHorizontal: 24,
+        marginBottom: 20,
+    },
+    headerTitle: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: Colors.dark.text,
+    },
+    refreshButton: {
+        padding: 8,
+        backgroundColor: Colors.dark.card,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: Colors.dark.border,
+    },
+    scrollContent: {
+        paddingHorizontal: 24,
+        paddingBottom: 40,
+    },
+    profileCard: {
+        alignItems: 'center',
+        backgroundColor: Colors.dark.card,
+        borderRadius: 20,
+        padding: 24,
+        marginBottom: 24,
+        borderWidth: 1,
+        borderColor: Colors.dark.border,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4.65,
+        elevation: 8,
+    },
+    avatarContainer: {
+        marginBottom: 16,
     },
     username: {
         fontSize: 24,
         fontWeight: 'bold',
         color: Colors.dark.text,
-        marginTop: 16,
+        marginBottom: 4,
     },
-    email: {
+    roleBadge: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: Colors.dark.primary,
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
+        marginBottom: 24,
+        overflow: 'hidden',
+    },
+    infoSection: {
+        width: '100%',
+        gap: 16,
+    },
+    infoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    infoText: {
         fontSize: 16,
         color: Colors.dark.textSecondary,
-        marginTop: 4,
+        flex: 1,
     },
-    section: {
+    actionSection: {
         backgroundColor: Colors.dark.card,
         borderRadius: 16,
         overflow: 'hidden',

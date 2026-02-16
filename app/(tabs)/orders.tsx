@@ -1,5 +1,6 @@
+import { RefreshCw } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { orderService } from '../../services/api';
 
@@ -65,7 +66,7 @@ export default function OrdersScreen() {
                     {item.items?.map((orderItem: any, index: number) => (
                         <View key={index} style={styles.orderItemRow}>
                             <Text style={styles.itemName}>{orderItem.quantity}x {orderItem.food_item?.name || 'Item'}</Text>
-                            <Text style={styles.itemPrice}>${(Number(orderItem.snapshot_price) * orderItem.quantity).toFixed(2)}</Text>
+                            <Text style={styles.itemPrice}>₹{(Number(orderItem.snapshot_price) * orderItem.quantity).toFixed(2)}</Text>
                         </View>
                     ))}
                 </View>
@@ -74,7 +75,7 @@ export default function OrdersScreen() {
 
                 <View style={styles.totalRow}>
                     <Text style={styles.totalLabel}>Total</Text>
-                    <Text style={styles.totalAmount}>${totalAmount.toFixed(2)}</Text>
+                    <Text style={styles.totalAmount}>₹{totalAmount.toFixed(2)}</Text>
                 </View>
             </View>
         );
@@ -90,7 +91,12 @@ export default function OrdersScreen() {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.screenTitle}>My Orders</Text>
+            <View style={styles.headerBar}>
+                <Text style={styles.screenTitle}>My Orders</Text>
+                <TouchableOpacity onPress={onRefresh} style={styles.refreshButton}>
+                    <RefreshCw size={20} color={Colors.dark.primary} />
+                </TouchableOpacity>
+            </View>
             <FlatList
                 data={orders}
                 renderItem={renderOrderItem}
@@ -121,12 +127,24 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: Colors.dark.background,
     },
+    headerBar: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        marginBottom: 16,
+    },
     screenTitle: {
         fontSize: 28,
         fontWeight: 'bold',
         color: Colors.dark.text,
-        paddingHorizontal: 16,
-        marginBottom: 16,
+    },
+    refreshButton: {
+        padding: 8,
+        backgroundColor: Colors.dark.card,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: Colors.dark.border,
     },
     listContent: {
         padding: 16,

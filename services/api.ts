@@ -42,11 +42,32 @@ export const authService = {
         return response.data;
     },
     register: async (userData: any) => {
-        const response = await api.post('/auth/register', { ...userData, role: 'CLIENT' });
+        // Enforce role as CLIENT as per client.md
+        const payload = { ...userData, role: 'CLIENT' };
+        const response = await api.post('/auth/register', payload);
         return response.data;
     },
     logout: async () => {
         await SecureStore.deleteItemAsync('access_token');
+    }
+};
+
+export const userService = {
+    getProfile: async () => {
+        // Assuming /auth/me exists based on standard practices, as client.md doesn't specify a profile endpoint
+        // If this fails 404, we might need to ask backend dev for the correct endpoint.
+        // Trying /auth/me first.
+        try {
+            const response = await api.get('/auth/me');
+            return response.data;
+        } catch (error) {
+            // Fallback or retry.
+            throw error;
+        }
+    },
+    updateProfile: async (data: any) => {
+        const response = await api.put('/auth/me', data);
+        return response.data;
     }
 };
 

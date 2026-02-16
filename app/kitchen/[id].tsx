@@ -12,7 +12,7 @@ export default function KitchenDetailsScreen() {
     const [menuItems, setMenuItems] = useState([]);
     const [loading, setLoading] = useState(true);
     // const [cart, setCart] = useState<{ [key: string]: number }>({}); // Removed local cart
-    const { addToCart, count } = useCart(); // Use global cart
+    const { addToCart, count, cartItems, updateQuantity } = useCart(); // Use global cart
     const router = useRouter();
 
     useEffect(() => {
@@ -24,7 +24,6 @@ export default function KitchenDetailsScreen() {
                 ]);
                 setKitchen(kitchenData);
                 setMenuItems(menuData);
-                // Cart loading is handled by CartContext
             } catch (error) {
                 console.error('Failed to fetch kitchen details', error);
             } finally {
@@ -38,22 +37,53 @@ export default function KitchenDetailsScreen() {
         await addToCart(item, 1, id as string);
     };
 
-    const renderMenuItem = ({ item }: { item: any }) => (
-        <View style={styles.menuItem}>
-            <Image source={{ uri: item.image_url || 'https://via.placeholder.com/150' }} style={styles.menuImage} />
-            <View style={styles.menuContent}>
-                <Text style={styles.menuName}>{item.name}</Text>
-                <Text style={styles.menuDesc} numberOfLines={2}>{item.description}</Text>
-                <View style={styles.priceRow}>
-                    <Text style={styles.price}>${item.price}</Text>
-                    <TouchableOpacity style={styles.addButton} onPress={() => handleAddToCart(item)}>
-                        <Plus size={16} color="white" />
-                        <Text style={styles.addButtonText}>Add</Text>
-                    </TouchableOpacity>
+    const getQuantity = (itemId: string) => {
+        const cartItem = cartItems.find((ci) => ci.item.id === itemId);
+        return cartItem ? cartItem.quantity : 0;
+    };
+
+    const renderMenuItem = ({ item }: { item: any }) => {
+        const qty = getQuantity(item.id);
+
+        return (
+            <View style={styles.menuItem}>
+                <Image source={{ uri: item.image_url || 'https://via.placeholder.com/150' }} style={styles.menuImage} />
+                <View style={styles.menuContent}>
+                    <Text style={styles.menuName}>{item.name}</Text>
+                    <Text style={styles.menuDesc} numberOfLines={2}>{item.description}</Text>
+                    <View style={styles.priceRow}>
+                        <Text style={styles.price}>₹{item.price}</Text>
+                        {qty > 0 ? (
+                            <View style={styles.quantityContainer}>
+                                <TouchableOpacity
+                                    style={styles.quantityButton}
+                                    onPress={() => updateQuantity(item.id, qty - 1)}
+                                >
+                                    <View style={styles.iconButton}>
+                                        <Text style={styles.iconButtonText}>-</Text>
+                                    </View>
+                                </TouchableOpacity>
+                                <Text style={styles.quantityText}>{qty}</Text>
+                                <TouchableOpacity
+                                    style={styles.quantityButton}
+                                    onPress={() => updateQuantity(item.id, qty + 1)}
+                                >
+                                    <View style={styles.iconButton}>
+                                        <Text style={styles.iconButtonText}>+</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            <TouchableOpacity style={styles.addButton} onPress={() => handleAddToCart(item)}>
+                                <Plus size={16} color="white" />
+                                <Text style={styles.addButtonText}>Add</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
                 </View>
             </View>
-        </View>
-    );
+        );
+    };
 
     if (loading) {
         return (
@@ -221,5 +251,38 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 18,
         fontWeight: 'bold',
+    },
+    quantityContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: Colors.dark.card,
+        borderWidth: 1,
+        borderColor: Colors.dark.border,
+        borderRadius: 8,
+    },
+    quantityButton: {
+        padding: 5,
+    },
+    iconButton: {
+        backgroundColor: Colors.dark.primary,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    iconButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 14,
+        lineHeight: 16,
+    },
+    quantityText: {
+        color: Colors.dark.text,
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginHorizontal: 10,
+        minWidth: 20,
+        textAlign: 'center',
     },
 });
