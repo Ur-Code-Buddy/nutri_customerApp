@@ -126,4 +126,4 @@ Contributions are welcome! If you have suggestions or bug fixes, please fork the
 
 ---
 
-**Developed with ❤️ by Bai**
+Note: This project is part of a larger ecosystem for the Nutri Tiffin service.
