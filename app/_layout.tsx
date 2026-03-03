@@ -1,7 +1,8 @@
+import { ChevronLeft } from 'lucide-react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { CartProvider } from '../context/CartContext';
@@ -36,12 +37,24 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen
             name="kitchen/[id]"
-            options={{
+            options={({ navigation }) => ({
               headerShown: true,
+              headerBackVisible: false,
               title: 'Kitchen Details',
               headerStyle: { backgroundColor: Colors.dark.card },
               headerTintColor: Colors.dark.text,
-            }}
+              headerLeftContainerStyle: styles.headerLeftContainer,
+              headerLeft: () => (
+                <TouchableOpacity
+                  onPress={() => navigation.goBack()}
+                  style={styles.headerBack}
+                  hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+                  activeOpacity={0.6}
+                >
+                  <ChevronLeft size={26} color={Colors.dark.text} strokeWidth={2.5} />
+                </TouchableOpacity>
+              ),
+            })}
           />
           <Stack.Screen
             name="cart"
@@ -61,6 +74,13 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
+  headerLeftContainer: {
+    justifyContent: 'center',
+    paddingLeft: 4,
+  },
+  headerBack: {
+    padding: 4,
+  },
   loader: {
     flex: 1,
     justifyContent: 'center',

@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { CreditCard, Minus, Plus, Trash2 } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../constants/Colors';
 import { useCart } from '../context/CartContext';
 import { orderService } from '../services/api';
@@ -10,6 +11,7 @@ export default function CartScreen() {
     const { cartItems, kitchenId, totalAmount, updateQuantity, removeFromCart, clearCart } = useCart();
     const [submitting, setSubmitting] = useState(false);
     const router = useRouter();
+    const insets = useSafeAreaInsets();
 
     const handlePlaceOrder = async () => {
         if (!kitchenId || cartItems.length === 0) return;
@@ -75,8 +77,12 @@ export default function CartScreen() {
 
             <View style={styles.totalContainer}>
                 <Text style={styles.itemTotal}>₹{(Number(item.item.price) * item.quantity).toFixed(2)}</Text>
-                <TouchableOpacity onPress={() => removeFromCart(item.item.id)} style={styles.removeButton}>
-                    <Trash2 color={Colors.dark.danger} size={20} />
+                <TouchableOpacity
+                    onPress={() => removeFromCart(item.item.id)}
+                    style={styles.removeButton}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                    <Trash2 color={Colors.dark.danger} size={18} strokeWidth={2} />
                 </TouchableOpacity>
             </View>
         </View>
@@ -85,13 +91,41 @@ export default function CartScreen() {
     if (cartItems.length === 0) {
         return (
             <View style={styles.centered}>
-                <Text style={styles.emptyText}>Your cart is empty.</Text>
-                <TouchableOpacity style={styles.browsingButton} onPress={() => router.back()}>
+                <Text style={styles.emptyText}>Your cart is empty</Text>
+                <TouchableOpacity
+                    style={styles.browsingButton}
+                    onPress={() => router.back()}
+                    activeOpacity={0.85}
+                >
                     <Text style={styles.browsingButtonText}>Start Browsing</Text>
                 </TouchableOpacity>
             </View>
-        )
+        );
     }
+
+    const footer = (
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
+            <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>Total</Text>
+                <Text style={styles.totalAmount}>₹{totalAmount.toFixed(2)}</Text>
+            </View>
+            <TouchableOpacity
+                style={[styles.checkoutButton, submitting && styles.checkoutButtonDisabled]}
+                onPress={handlePlaceOrder}
+                disabled={submitting}
+                activeOpacity={0.85}
+            >
+                {submitting ? (
+                    <ActivityIndicator color={Colors.dark.primaryForeground} />
+                ) : (
+                    <>
+                        <CreditCard color={Colors.dark.primaryForeground} size={20} style={styles.checkoutIcon} />
+                        <Text style={styles.checkoutText}>Place Order</Text>
+                    </>
+                )}
+            </TouchableOpacity>
+        </View>
+    );
 
     return (
         <View style={styles.container}>
@@ -99,38 +133,18 @@ export default function CartScreen() {
                 data={cartItems}
                 renderItem={renderCartItem}
                 keyExtractor={(item) => item.item.id}
-                contentContainerStyle={styles.listContent}
+                contentContainerStyle={[styles.listContent, { paddingBottom: 200 + insets.bottom }]}
+                showsVerticalScrollIndicator={false}
                 ListHeaderComponent={
                     <View style={styles.header}>
                         <Text style={styles.headerTitle}>Order Summary</Text>
-                        <TouchableOpacity onPress={clearCart}>
+                        <TouchableOpacity onPress={clearCart} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
                             <Text style={styles.clearText}>Clear Cart</Text>
                         </TouchableOpacity>
                     </View>
                 }
             />
-
-            <View style={styles.footer}>
-                <View style={styles.totalRow}>
-                    <Text style={styles.totalLabel}>Total</Text>
-                    <Text style={styles.totalAmount}>₹{totalAmount.toFixed(2)}</Text>
-                </View>
-
-                <TouchableOpacity
-                    style={styles.checkoutButton}
-                    onPress={handlePlaceOrder}
-                    disabled={submitting}
-                >
-                    {submitting ? (
-                        <ActivityIndicator color={Colors.dark.primaryForeground} />
-                    ) : (
-                        <>
-                            <CreditCard color={Colors.dark.primaryForeground} size={20} style={{ marginRight: 8 }} />
-                            <Text style={styles.checkoutText}>Place Order</Text>
-                        </>
-                    )}
-                </TouchableOpacity>
-            </View>
+            <View style={styles.footerWrapper}>{footer}</View>
         </View>
     );
 }
@@ -227,13 +241,14 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     totalContainer: {
-        alignItems: 'flex-end',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
     },
     itemTotal: {
         fontSize: 16,
-        fontWeight: 'bold',
+        fontWeight: '600',
         color: Colors.dark.text,
-        marginBottom: 4,
     },
     removeButton: {
         padding: 4,
@@ -243,17 +258,24 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '500',
     },
-    footer: {
-        paddingHorizontal: 24,
-        paddingVertical: 24,
+    footerWrapper: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: Colors.dark.card,
         borderTopWidth: 1,
         borderTopColor: Colors.dark.border,
-        backgroundColor: Colors.dark.card,
+    },
+    footer: {
+        paddingHorizontal: 24,
+        paddingTop: 20,
     },
     totalRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 24,
+        alignItems: 'center',
+        marginBottom: 16,
     },
     totalLabel: {
         fontSize: 18,
@@ -267,11 +289,17 @@ const styles = StyleSheet.create({
     },
     checkoutButton: {
         backgroundColor: Colors.dark.primary,
-        height: 56,
-        borderRadius: 12,
+        height: 52,
+        borderRadius: 14,
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    checkoutButtonDisabled: {
+        opacity: 0.8,
+    },
+    checkoutIcon: {
+        marginRight: 10,
     },
     checkoutText: {
         color: Colors.dark.primaryForeground,
