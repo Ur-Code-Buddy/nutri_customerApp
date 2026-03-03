@@ -1,31 +1,68 @@
 import { useRouter, useSegments } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useCallback, useState } from 'react';
 import { authService, getAuthToken, setAuthToken } from '../services/api';
+
+export interface PendingCredentials {
+    username: string;
+    password: string;
+}
+
+export interface RegisterNeedsLogin {
+    needsLogin: true;
+    email: string;
+}
 
 interface AuthContextType {
     user: any | null;
     isLoading: boolean;
-    signIn: (credentials: any) => Promise<void>;
-    signUp: (userData: any) => Promise<void>;
+    isInitializing: boolean;
+    pendingCredentials: PendingCredentials | null;
+    signIn: (credentials: { username: string; password: string }) => Promise<void>;
+    signUp: (userData: RegisterUserData) => Promise<RegisterNeedsLogin | void>;
     signOut: () => Promise<void>;
+    setPendingCredentials: (creds: PendingCredentials | null) => void;
+    clearPendingCredentials: () => void;
+}
+
+export interface RegisterUserData {
+    username: string;
+    name: string;
+    email: string;
+    phone_number: string;
+    address: string;
+    pincode: string;
+    password: string;
 }
 
 const AuthContext = createContext<AuthContextType>({
     user: null,
     isLoading: true,
+    isInitializing: true,
+    pendingCredentials: null,
     signIn: async () => { },
     signUp: async () => { },
     signOut: async () => { },
+    setPendingCredentials: () => { },
+    clearPendingCredentials: () => { },
 });
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<any | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isInitializing, setIsInitializing] = useState(true);
+    const [pendingCredentials, setPendingCredentialsState] = useState<PendingCredentials | null>(null);
     const router = useRouter();
     const segments = useSegments();
+
+    const setPendingCredentials = useCallback((creds: PendingCredentials | null) => {
+        setPendingCredentialsState(creds);
+    }, []);
+
+    const clearPendingCredentials = useCallback(() => {
+        setPendingCredentialsState(null);
+    }, []);
 
     useEffect(() => {
         const checkAuth = async () => {
@@ -36,35 +73,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     if (userData) {
                         setUser(JSON.parse(userData));
                     } else {
-                        // Fallback if we have token but no user data (e.g. from previous version of app)
-                        // Ideally we would fetch profile here. For now, we set a temporary state or just token.
                         setUser({ token });
                     }
                 }
             } catch (error) {
                 console.error('Auth check failed:', error);
             } finally {
-                setIsLoading(false);
+                setIsInitializing(false);
             }
         };
 
         checkAuth();
     }, []);
 
-    // Navigation Protection
+    // Navigation Protection - only run after initial auth check
     useEffect(() => {
-        if (isLoading) return;
+        if (isInitializing) return;
 
         const inAuthGroup = segments[0] === '(auth)';
 
         if (!user && !inAuthGroup) {
-            // Redirect to the sign-in page.
             router.replace('/(auth)/login');
         } else if (user && inAuthGroup) {
-            // Redirect away from the sign-in page.
             router.replace('/(tabs)');
         }
-    }, [user, segments, isLoading]);
+    }, [user, segments, isInitializing]);
 
 
     const signIn = async (credentials: any) => {
@@ -82,15 +115,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
     };
 
-    const signUp = async (userData: any) => {
-        try {
-            await authService.register(userData);
-            // Auto login after register or redirect to login? 
-            // Let's auto login for better UX
+    const signUp = async (userData: RegisterUserData): Promise<RegisterNeedsLogin | void> => {
+        const data = await authService.register(userData);
+        if (data?.access_token) {
             await signIn({ username: userData.username, password: userData.password });
-        } catch (error) {
-            throw error;
+            return;
         }
+        return { needsLogin: true, email: userData.email };
     };
 
     const signOut = async () => {
@@ -100,7 +131,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, isLoading, signIn, signUp, signOut }}>
+        <AuthContext.Provider
+            value={{
+                user,
+                isLoading: isInitializing,
+                isInitializing,
+                pendingCredentials,
+                signIn,
+                signUp,
+                signOut,
+                setPendingCredentials,
+                clearPendingCredentials,
+            }}
+        >
             {children}
         </AuthContext.Provider>
     );

@@ -1,29 +1,85 @@
 import { useRouter } from 'expo-router';
-import { Lock, User } from 'lucide-react-native';
+import { Lock, Mail, MapPin, Phone, User } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+    ActivityIndicator,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { useAuth } from '../../context/AuthContext';
 
+const INPUT_ICON_PROPS = { color: Colors.dark.textSecondary, size: 20 };
+
 export default function RegisterScreen() {
     const [username, setUsername] = useState('');
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [address, setAddress] = useState('');
+    const [pincode, setPincode] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const { signUp } = useAuth();
+
+    const { signUp, setPendingCredentials } = useAuth();
     const router = useRouter();
 
     const handleRegister = async () => {
-        if (!username || !password) {
-            Alert.alert('Error', 'Please fill in all fields');
+        const fields = [
+            { value: username, label: 'Username' },
+            { value: name, label: 'Name' },
+            { value: email, label: 'Email' },
+            { value: phoneNumber, label: 'Phone number' },
+            { value: address, label: 'Address' },
+            { value: pincode, label: 'Pincode' },
+            { value: password, label: 'Password' },
+        ];
+        const missing = fields.find((f) => !f.value?.trim());
+        if (missing) {
+            Alert.alert('Error', `Please fill in ${missing.label}`);
+            return;
+        }
+
+        if (!/^\d{10}$/.test(phoneNumber.trim())) {
+            Alert.alert('Error', 'Phone number must be exactly 10 digits');
+            return;
+        }
+        if (!/^\d{6}$/.test(pincode.trim())) {
+            Alert.alert('Error', 'Pincode must be exactly 6 digits');
             return;
         }
 
         setLoading(true);
         try {
-            await signUp({ username, password });
-            // Navigation is handled in AuthContext via segments
+            const result = await signUp({
+                username: username.trim(),
+                name: name.trim(),
+                email: email.trim().toLowerCase(),
+                phone_number: phoneNumber.trim(),
+                address: address.trim(),
+                pincode: pincode.trim(),
+                password,
+            });
+
+            if (result?.needsLogin) {
+                setPendingCredentials({ username: username.trim(), password });
+                router.replace({
+                    pathname: '/(auth)/email-verification-pending',
+                    params: { email: result.email },
+                });
+            }
         } catch (error: any) {
-            Alert.alert('Registration Failed', error.response?.data?.message || 'Could not create account');
+            Alert.alert(
+                'Registration Failed',
+                error.response?.data?.message || 'Could not create account'
+            );
         } finally {
             setLoading(false);
         }
@@ -34,15 +90,18 @@ export default function RegisterScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.container}
         >
-            <ScrollView contentContainerStyle={styles.scrollContent}>
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
                 <View style={styles.header}>
                     <Text style={styles.title}>Create Account</Text>
                     <Text style={styles.subtitle}>Join NutriTiffin for delicious meals</Text>
                 </View>
 
                 <View style={styles.form}>
-                    <View style={styles.inputContainer}>
-                        <User color={Colors.dark.textSecondary} size={20} style={styles.icon} />
+                    <InputRow icon={<User {...INPUT_ICON_PROPS} />}>
                         <TextInput
                             style={styles.input}
                             placeholder="Username"
@@ -51,10 +110,59 @@ export default function RegisterScreen() {
                             onChangeText={setUsername}
                             autoCapitalize="none"
                         />
-                    </View>
-
-                    <View style={styles.inputContainer}>
-                        <Lock color={Colors.dark.textSecondary} size={20} style={styles.icon} />
+                    </InputRow>
+                    <InputRow icon={<User {...INPUT_ICON_PROPS} />}>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Full Name"
+                            placeholderTextColor={Colors.dark.textSecondary}
+                            value={name}
+                            onChangeText={setName}
+                        />
+                    </InputRow>
+                    <InputRow icon={<Mail {...INPUT_ICON_PROPS} />}>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Email"
+                            placeholderTextColor={Colors.dark.textSecondary}
+                            value={email}
+                            onChangeText={setEmail}
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                        />
+                    </InputRow>
+                    <InputRow icon={<Phone {...INPUT_ICON_PROPS} />}>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Phone Number (10 digits)"
+                            placeholderTextColor={Colors.dark.textSecondary}
+                            value={phoneNumber}
+                            onChangeText={(t) => setPhoneNumber(t.replace(/\D/g, '').slice(0, 10))}
+                            keyboardType="phone-pad"
+                            maxLength={10}
+                        />
+                    </InputRow>
+                    <InputRow icon={<MapPin {...INPUT_ICON_PROPS} />}>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Address"
+                            placeholderTextColor={Colors.dark.textSecondary}
+                            value={address}
+                            onChangeText={setAddress}
+                        />
+                    </InputRow>
+                    <InputRow icon={<MapPin {...INPUT_ICON_PROPS} />}>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Pincode (6 digits)"
+                            placeholderTextColor={Colors.dark.textSecondary}
+                            value={pincode}
+                            onChangeText={(t) => setPincode(t.replace(/\D/g, '').slice(0, 6))}
+                            keyboardType="number-pad"
+                            maxLength={6}
+                        />
+                    </InputRow>
+                    <InputRow icon={<Lock {...INPUT_ICON_PROPS} />}>
                         <TextInput
                             style={styles.input}
                             placeholder="Password"
@@ -63,7 +171,7 @@ export default function RegisterScreen() {
                             onChangeText={setPassword}
                             secureTextEntry
                         />
-                    </View>
+                    </InputRow>
 
                     <TouchableOpacity
                         style={styles.button}
@@ -89,6 +197,21 @@ export default function RegisterScreen() {
     );
 }
 
+function InputRow({
+    icon,
+    children,
+}: {
+    icon: React.ReactNode;
+    children: React.ReactNode;
+}) {
+    return (
+        <View style={styles.inputContainer}>
+            <View style={styles.icon}>{icon}</View>
+            {children}
+        </View>
+    );
+}
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -96,11 +219,11 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         flexGrow: 1,
-        justifyContent: 'center',
         padding: 24,
+        paddingBottom: 40,
     },
     header: {
-        marginBottom: 40,
+        marginBottom: 32,
         alignItems: 'center',
     },
     title: {
@@ -121,9 +244,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: Colors.dark.input,
         borderRadius: 12,
-        marginBottom: 16,
+        marginBottom: 12,
         paddingHorizontal: 16,
-        height: 56,
+        height: 52,
         borderWidth: 1,
         borderColor: Colors.dark.border,
     },

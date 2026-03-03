@@ -37,14 +37,29 @@ export const getAuthToken = async () => {
 }
 
 export const authService = {
-    login: async (credentials: any) => {
+    login: async (credentials: { username: string; password: string }) => {
         const response = await api.post('/auth/login', credentials);
         return response.data;
     },
-    register: async (userData: any) => {
-        // Enforce role as CLIENT as per client.md
+    register: async (userData: {
+        username: string;
+        name: string;
+        email: string;
+        phone_number: string;
+        address: string;
+        pincode: string;
+        password: string;
+    }) => {
         const payload = { ...userData, role: 'CLIENT' };
         const response = await api.post('/auth/register', payload);
+        return response.data;
+    },
+    resendVerification: async (email: string) => {
+        const response = await api.post('/auth/resend-verification', { email });
+        return response.data;
+    },
+    checkEmailVerified: async (email: string) => {
+        const response = await api.post('/auth/check-email-verified', { email });
         return response.data;
     },
     logout: async () => {

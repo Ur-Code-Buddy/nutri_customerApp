@@ -1,15 +1,29 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import React from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Colors } from '../constants/Colors';
-import { AuthProvider } from '../context/AuthContext';
-
+import { AuthProvider, useAuth } from '../context/AuthContext';
 import { CartProvider } from '../context/CartContext';
+
+function InitializingGuard({ children }: { children: React.ReactNode }) {
+  const { isInitializing } = useAuth();
+  if (isInitializing) {
+    return (
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color={Colors.dark.primary} />
+      </View>
+    );
+  }
+  return <>{children}</>;
+}
 
 export default function RootLayout() {
   return (
     <AuthProvider>
       <CartProvider>
         <StatusBar style="light" />
+        <InitializingGuard>
         <Stack
           screenOptions={{
             headerShown: false,
@@ -40,7 +54,17 @@ export default function RootLayout() {
             }}
           />
         </Stack>
+        </InitializingGuard>
       </CartProvider>
     </AuthProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  loader: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.dark.background,
+  },
+});
