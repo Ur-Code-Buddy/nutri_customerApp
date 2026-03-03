@@ -1,4 +1,4 @@
-import { LogOut, Mail, MapPin, Phone, RefreshCw, UserCircle } from 'lucide-react-native';
+import { LogOut, Mail, MapPin, Phone, UserCircle } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
@@ -38,9 +38,6 @@ export default function ProfileScreen() {
         <View style={styles.container}>
             <View style={styles.headerBar}>
                 <Text style={styles.headerTitle}>My Profile</Text>
-                <TouchableOpacity onPress={onRefresh} style={styles.refreshButton}>
-                    <RefreshCw size={20} color={Colors.dark.primary} />
-                </TouchableOpacity>
             </View>
 
             <ScrollView
@@ -99,9 +96,6 @@ const styles = StyleSheet.create({
         paddingTop: 50,
     },
     headerBar: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
         paddingHorizontal: 24,
         marginBottom: 20,
     },
@@ -110,16 +104,9 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: Colors.dark.text,
     },
-    refreshButton: {
-        padding: 8,
-        backgroundColor: Colors.dark.card,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: Colors.dark.border,
-    },
     scrollContent: {
         paddingHorizontal: 24,
-        paddingBottom: 40,
+        paddingBottom: 100,
     },
     profileCard: {
         alignItems: 'center',

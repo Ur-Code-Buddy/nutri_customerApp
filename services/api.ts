@@ -69,19 +69,11 @@ export const authService = {
 
 export const userService = {
     getProfile: async () => {
-        // Assuming /auth/me exists based on standard practices, as client.md doesn't specify a profile endpoint
-        // If this fails 404, we might need to ask backend dev for the correct endpoint.
-        // Trying /auth/me first.
-        try {
-            const response = await api.get('/auth/me');
-            return response.data;
-        } catch (error) {
-            // Fallback or retry.
-            throw error;
-        }
+        const response = await api.get('/users/me');
+        return response.data;
     },
     updateProfile: async (data: any) => {
-        const response = await api.put('/auth/me', data);
+        const response = await api.put('/users/me', data);
         return response.data;
     }
 };

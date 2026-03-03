@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { MapPin, RefreshCw, Star } from 'lucide-react-native';
+import { MapPin, Star } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
@@ -78,12 +78,7 @@ export default function KitchensScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.titleRow}>
-          <Text style={styles.headerTitle}>Discover Kitchens</Text>
-          <TouchableOpacity onPress={onRefresh} style={styles.refreshButton}>
-            <RefreshCw size={20} color={Colors.dark.primary} />
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.headerTitle}>Discover Kitchens</Text>
         <Text style={styles.headerSubtitle}>Home-cooked meals near you</Text>
       </View>
       <FlatList
@@ -120,22 +115,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 16,
   },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
     color: Colors.dark.text,
-  },
-  refreshButton: {
-    padding: 8,
-    backgroundColor: Colors.dark.card,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
   },
   headerSubtitle: {
     fontSize: 16,
@@ -145,6 +128,7 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 16,
     paddingTop: 8,
+    paddingBottom: 100,
   },
   card: {
     backgroundColor: Colors.dark.card,
