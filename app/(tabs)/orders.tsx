@@ -34,7 +34,7 @@ export default function OrdersScreen() {
             case 'completed':
             case 'accepted':
                 return Colors.dark.success;
-            case 'pending': return '#eab308'; // Yellow
+            case 'pending': return Colors.dark.primary;
             case 'rejected': return Colors.dark.danger;
             default: return Colors.dark.textSecondary;
         }
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.dark.background,
     },
     headerBar: {
-        paddingHorizontal: 16,
+        paddingHorizontal: 24,
         marginBottom: 16,
     },
     screenTitle: {
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
         color: Colors.dark.text,
     },
     listContent: {
-        padding: 16,
+        paddingHorizontal: 24,
         paddingTop: 0,
         paddingBottom: 100,
     },
@@ -144,6 +144,11 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         borderWidth: 1,
         borderColor: Colors.dark.border,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 4,
     },
     header: {
         flexDirection: 'row',

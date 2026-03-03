@@ -75,7 +75,7 @@ export default function KitchenDetailsScreen() {
                             </View>
                         ) : (
                             <TouchableOpacity style={styles.addButton} onPress={() => handleAddToCart(item)}>
-                                <Plus size={16} color="white" />
+                                <Plus size={16} color={Colors.dark.primaryForeground} />
                                 <Text style={styles.addButtonText}>Add</Text>
                             </TouchableOpacity>
                         )}
@@ -138,7 +138,8 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.dark.background,
     },
     header: {
-        padding: 16,
+        paddingHorizontal: 24,
+        paddingVertical: 16,
         borderBottomWidth: 1,
         borderBottomColor: Colors.dark.border,
         backgroundColor: Colors.dark.card,
@@ -154,8 +155,9 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
     listContent: {
-        padding: 16,
-        paddingBottom: 100, // Space for floating cart
+        paddingHorizontal: 24,
+        paddingVertical: 16,
+        paddingBottom: 100,
     },
     menuItem: {
         flexDirection: 'row',
@@ -165,6 +167,11 @@ const styles = StyleSheet.create({
         padding: 12,
         borderWidth: 1,
         borderColor: Colors.dark.border,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 4,
     },
     menuImage: {
         width: 80,
@@ -206,7 +213,7 @@ const styles = StyleSheet.create({
         borderRadius: 6,
     },
     addButtonText: {
-        color: 'white',
+        color: Colors.dark.primaryForeground,
         fontWeight: 'bold',
         marginLeft: 4,
         fontSize: 12,
@@ -214,8 +221,8 @@ const styles = StyleSheet.create({
     floatingCartContainer: {
         position: 'absolute',
         bottom: 24,
-        left: 16,
-        right: 16,
+        left: 24,
+        right: 24,
     },
     floatingCart: {
         backgroundColor: Colors.dark.primary,
@@ -225,10 +232,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 16,
         borderRadius: 16,
-        shadowColor: "#000",
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
-        shadowRadius: 4.65,
+        shadowRadius: 8,
         elevation: 8,
     },
     cartInfo: {
@@ -236,7 +243,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     badge: {
-        backgroundColor: 'white',
+        backgroundColor: Colors.dark.primaryForeground,
         borderRadius: 12,
         paddingHorizontal: 8,
         paddingVertical: 2,
@@ -248,7 +255,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     viewCartText: {
-        color: 'white',
+        color: Colors.dark.primaryForeground,
         fontSize: 18,
         fontWeight: 'bold',
     },
@@ -272,7 +279,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     iconButtonText: {
-        color: 'white',
+        color: Colors.dark.primaryForeground,
         fontWeight: 'bold',
         fontSize: 14,
         lineHeight: 16,

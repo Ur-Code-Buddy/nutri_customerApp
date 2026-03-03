@@ -195,7 +195,8 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: Colors.dark.background,
         justifyContent: 'center',
-        padding: 24,
+        paddingHorizontal: 24,
+        paddingVertical: 24,
     },
     content: {
         alignItems: 'center',
@@ -242,7 +243,7 @@ const styles = StyleSheet.create({
     },
     btnPrimary: {
         backgroundColor: Colors.dark.primary,
-        shadowColor: Colors.dark.primary,
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
@@ -254,7 +255,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     btnSecondary: {
-        backgroundColor: Colors.dark.input,
+        backgroundColor: Colors.dark.card,
         borderWidth: 1,
         borderColor: Colors.dark.border,
     },

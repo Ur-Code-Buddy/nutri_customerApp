@@ -10,13 +10,14 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Colors } from '../constants/Colors';
 
 const TAB_BAR_COLORS = {
-  surfaceElevated: '#252528',
-  borderLight: '#3a3a3c',
-  primary: '#FF6B35',
-  textTertiary: '#636366',
-} as const;
+  surfaceElevated: Colors.dark.card,
+  borderLight: Colors.dark.border,
+  primary: Colors.dark.primary,
+  textTertiary: Colors.dark.muted,
+};
 
 const TAB_ICONS: Record<
   string,

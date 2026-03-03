@@ -97,7 +97,8 @@ const styles = StyleSheet.create({
     scrollContent: {
         flexGrow: 1,
         justifyContent: 'center',
-        padding: 24,
+        paddingHorizontal: 24,
+        paddingVertical: 24,
     },
     header: {
         marginBottom: 40,
@@ -106,7 +107,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 32,
         fontWeight: 'bold',
-        color: Colors.dark.primary,
+        color: Colors.dark.text,
         marginBottom: 8,
     },
     subtitle: {
@@ -119,7 +120,7 @@ const styles = StyleSheet.create({
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: Colors.dark.input,
+        backgroundColor: Colors.dark.card,
         borderRadius: 12,
         marginBottom: 16,
         paddingHorizontal: 16,
@@ -142,7 +143,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: 24,
-        shadowColor: Colors.dark.primary,
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,

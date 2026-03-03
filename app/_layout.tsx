@@ -39,7 +39,7 @@ export default function RootLayout() {
             options={{
               headerShown: true,
               title: 'Kitchen Details',
-              headerStyle: { backgroundColor: Colors.dark.background },
+              headerStyle: { backgroundColor: Colors.dark.card },
               headerTintColor: Colors.dark.text,
             }}
           />

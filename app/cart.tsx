@@ -122,10 +122,10 @@ export default function CartScreen() {
                     disabled={submitting}
                 >
                     {submitting ? (
-                        <ActivityIndicator color="white" />
+                        <ActivityIndicator color={Colors.dark.primaryForeground} />
                     ) : (
                         <>
-                            <CreditCard color="white" size={20} style={{ marginRight: 8 }} />
+                            <CreditCard color={Colors.dark.primaryForeground} size={20} style={{ marginRight: 8 }} />
                             <Text style={styles.checkoutText}>Place Order</Text>
                         </>
                     )}
@@ -158,11 +158,12 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     browsingButtonText: {
-        color: 'white',
+        color: Colors.dark.primaryForeground,
         fontWeight: 'bold',
     },
     listContent: {
-        padding: 16,
+        paddingHorizontal: 24,
+        paddingVertical: 16,
     },
     header: {
         flexDirection: 'row',
@@ -187,6 +188,11 @@ const styles = StyleSheet.create({
         marginBottom: 12,
         borderWidth: 1,
         borderColor: Colors.dark.border,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 4,
     },
     itemInfo: {
         flex: 1,
@@ -238,7 +244,8 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     footer: {
-        padding: 24,
+        paddingHorizontal: 24,
+        paddingVertical: 24,
         borderTopWidth: 1,
         borderTopColor: Colors.dark.border,
         backgroundColor: Colors.dark.card,
@@ -267,7 +274,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     checkoutText: {
-        color: 'white',
+        color: Colors.dark.primaryForeground,
         fontSize: 18,
         fontWeight: 'bold',
     },

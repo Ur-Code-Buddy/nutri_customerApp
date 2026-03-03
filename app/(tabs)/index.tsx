@@ -53,7 +53,7 @@ export default function KitchensScreen() {
           <Text style={styles.kitchenName}>{item.name}</Text>
           {item.rating && (
             <View style={styles.ratingContainer}>
-              <Star size={14} color="#eab308" fill="#eab308" />
+              <Star size={14} color={Colors.dark.primary} fill={Colors.dark.primary} />
               <Text style={styles.ratingText}>{item.rating}</Text>
             </View>
           )}
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.dark.background,
   },
   header: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
     marginBottom: 16,
   },
   headerTitle: {
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   listContent: {
-    padding: 16,
+    paddingHorizontal: 24,
     paddingTop: 8,
     paddingBottom: 100,
   },
@@ -137,18 +137,25 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: Colors.dark.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   imagePlaceholder: {
     height: 120,
-    backgroundColor: Colors.dark.primary, // Using primary color as a nice background
+    backgroundColor: Colors.dark.card,
     justifyContent: 'center',
     alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.dark.border,
   },
   placeholderText: {
     fontSize: 48,
     fontWeight: 'bold',
-    color: Colors.dark.primaryForeground,
-    opacity: 0.5,
+    color: Colors.dark.muted,
+    opacity: 0.8,
   },
   cardContent: {
     padding: 16,
@@ -168,13 +175,13 @@ const styles = StyleSheet.create({
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(234, 179, 8, 0.2)',
+    backgroundColor: 'rgba(255, 107, 53, 0.2)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
   },
   ratingText: {
-    color: '#eab308', // Yellow-500
+    color: Colors.dark.primary,
     fontWeight: 'bold',
     marginLeft: 4,
     fontSize: 12,
