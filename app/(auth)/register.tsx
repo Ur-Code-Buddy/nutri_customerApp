@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { Check, X } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -16,6 +17,7 @@ import {
 } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { useAuth } from '../../context/AuthContext';
+import { userService } from '../../services/api';
 
 const STEPS = 2;
 
@@ -23,6 +25,8 @@ export default function RegisterScreen() {
     const [step, setStep] = useState(1);
     const [showVerification, setShowVerification] = useState(false);
     const [username, setUsername] = useState('');
+    const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+    const [checkingUsername, setCheckingUsername] = useState(false);
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
@@ -34,9 +38,38 @@ export default function RegisterScreen() {
     const { signUp, setPendingCredentials } = useAuth();
     const router = useRouter();
 
+    useEffect(() => {
+        const trimmed = username.trim();
+        if (!trimmed) {
+            setUsernameAvailable(null);
+            return;
+        }
+        let cancelled = false;
+        const t = setTimeout(async () => {
+            setCheckingUsername(true);
+            try {
+                const { exists } = await userService.checkUsername(trimmed);
+                if (!cancelled) setUsernameAvailable(!exists);
+            } catch {
+                if (!cancelled) setUsernameAvailable(null);
+            } finally {
+                if (!cancelled) setCheckingUsername(false);
+            }
+        }, 2000);
+        return () => {
+            cancelled = true;
+            clearTimeout(t);
+            setUsernameAvailable(null);
+        };
+    }, [username]);
+
     const validateStep1 = () => {
         if (!username.trim()) {
             Alert.alert('Error', 'Please fill in Username');
+            return false;
+        }
+        if (usernameAvailable !== true) {
+            Alert.alert('Error', 'Please choose an available username');
             return false;
         }
         if (!email.trim()) {
@@ -145,16 +178,31 @@ export default function RegisterScreen() {
                 <View style={styles.form}>
                     {step === 1 && (
                         <>
-                            <FormField label="Username">
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Choose a username"
-                                    placeholderTextColor={Colors.dark.textSecondary}
-                                    value={username}
-                                    onChangeText={setUsername}
-                                    autoCapitalize="none"
-                                />
-                            </FormField>
+                            <View style={styles.fieldWrapper}>
+                                <Text style={styles.fieldLabel}>Username</Text>
+                                <View style={styles.usernameRow}>
+                                    <TextInput
+                                        style={[styles.input, styles.usernameInput]}
+                                        placeholder="Choose a username"
+                                        placeholderTextColor={Colors.dark.textSecondary}
+                                        value={username}
+                                        onChangeText={setUsername}
+                                        autoCapitalize="none"
+                                    />
+                                    {checkingUsername && (
+                                        <ActivityIndicator size="small" color={Colors.dark.primary} style={styles.usernameIcon} />
+                                    )}
+                                    {!checkingUsername && username.trim() && usernameAvailable === true && (
+                                        <Check size={22} color={Colors.dark.success} style={styles.usernameIcon} />
+                                    )}
+                                    {!checkingUsername && username.trim() && usernameAvailable === false && (
+                                        <X size={22} color={Colors.dark.danger} style={styles.usernameIcon} />
+                                    )}
+                                </View>
+                                {!checkingUsername && username.trim() && usernameAvailable === false && (
+                                    <Text style={styles.usernameError}>Username not available</Text>
+                                )}
+                            </View>
                             <FormField label="Email">
                                 <TextInput
                                     style={styles.input}
@@ -234,8 +282,13 @@ export default function RegisterScreen() {
                             </TouchableOpacity>
                         )}
                         <TouchableOpacity
-                            style={[styles.button, step === 2 && styles.buttonFlex]}
+                            style={[
+                                styles.button,
+                                step === 2 && styles.buttonFlex,
+                                step === 1 && usernameAvailable !== true && styles.buttonDisabled,
+                            ]}
                             onPress={handleContinue}
+                            disabled={step === 1 && usernameAvailable !== true}
                         >
                             <Text style={styles.buttonText}>
                                 {step === 1 ? 'Continue' : 'Review'}
@@ -368,6 +421,33 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         borderWidth: 1,
         borderColor: Colors.dark.border,
+    },
+    usernameRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: Colors.dark.card,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: Colors.dark.border,
+        paddingRight: 12,
+    },
+    usernameInput: {
+        flex: 1,
+        backgroundColor: 'transparent',
+        borderWidth: 0,
+        paddingLeft: 16,
+    },
+    usernameIcon: {
+        marginLeft: 8,
+    },
+    usernameError: {
+        fontSize: 12,
+        color: Colors.dark.danger,
+        marginTop: 6,
+        marginLeft: 4,
+    },
+    buttonDisabled: {
+        opacity: 0.5,
     },
     input: {
         flex: 1,

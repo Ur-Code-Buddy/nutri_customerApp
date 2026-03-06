@@ -12,11 +12,16 @@ const api = axios.create({
 });
 
 // Response interceptor: on 401, clear auth storage and notify (handles expired/invalid tokens)
+// Skip logout for PATCH /users/me — 401 there means wrong current_password, not invalid token
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
-        if (error.response?.status === 401 && !originalRequest._retried) {
+        const isProfileUpdateWrongPassword =
+            error.response?.status === 401 &&
+            originalRequest?.method === 'patch' &&
+            originalRequest?.url?.includes('/users/me');
+        if (error.response?.status === 401 && !originalRequest._retried && !isProfileUpdateWrongPassword) {
             originalRequest._retried = true;
             await SecureStore.deleteItemAsync('access_token');
             await SecureStore.deleteItemAsync('user_data');
@@ -108,8 +113,17 @@ export const userService = {
         const response = await api.get('/users/me');
         return response.data;
     },
-    updateProfile: async (data: any) => {
-        const response = await api.put('/users/me', data);
+    checkUsername: async (username: string) => {
+        const response = await api.get(`/users/check-username/${encodeURIComponent(username)}`);
+        return response.data as { exists: boolean };
+    },
+    updateProfile: async (data: {
+        current_password: string;
+        address?: string;
+        phone_number?: string;
+        pincode?: string;
+    }) => {
+        const response = await api.patch('/users/me', data);
         return response.data;
     }
 };

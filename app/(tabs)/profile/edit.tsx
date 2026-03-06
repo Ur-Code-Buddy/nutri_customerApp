@@ -20,7 +20,7 @@ export default function EditProfileScreen() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [name, setName] = useState('');
+    const [currentPassword, setCurrentPassword] = useState('');
     const [phone, setPhone] = useState('');
     const [address, setAddress] = useState('');
     const [pincode, setPincode] = useState('');
@@ -29,7 +29,6 @@ export default function EditProfileScreen() {
         (async () => {
             try {
                 const data = await userService.getProfile();
-                setName(data.name || '');
                 setPhone(data.phone_number || '');
                 setAddress(data.address || '');
                 setPincode(data.pincode || '');
@@ -43,8 +42,8 @@ export default function EditProfileScreen() {
     }, []);
 
     const handleSave = async () => {
-        if (!name.trim()) {
-            Alert.alert('Error', 'Name is required');
+        if (!currentPassword.trim()) {
+            Alert.alert('Error', 'Current password is required to save changes');
             return;
         }
         if (!phone.trim()) {
@@ -66,13 +65,16 @@ export default function EditProfileScreen() {
 
         setSaving(true);
         try {
-            await userService.updateProfile({
-                name: name.trim(),
+            const result = await userService.updateProfile({
+                current_password: currentPassword,
                 phone_number: phone.trim(),
                 address: address.trim(),
                 pincode: pincode.trim(),
             });
-            Alert.alert('Success', 'Profile updated', [{ text: 'OK', onPress: () => router.back() }]);
+            const msg = result?.phone_verification_required
+                ? 'Profile updated. An OTP has been sent to your new phone for verification.'
+                : 'Profile updated';
+            Alert.alert('Success', msg, [{ text: 'OK', onPress: () => router.back() }]);
         } catch (e: any) {
             Alert.alert('Error', e.response?.data?.message || 'Failed to update profile');
         } finally {
@@ -104,20 +106,21 @@ export default function EditProfileScreen() {
                 keyboardVerticalOffset={80}
             >
                 <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-                    <Text style={styles.label}>Name</Text>
+                    <Text style={styles.label}>Current password</Text>
                     <TextInput
                         style={styles.input}
-                        value={name}
-                        onChangeText={setName}
-                        placeholder="Your name"
+                        value={currentPassword}
+                        onChangeText={setCurrentPassword}
+                        placeholder="Enter your password to confirm"
                         placeholderTextColor={Colors.dark.textSecondary}
+                        secureTextEntry
                     />
 
                     <Text style={styles.label}>Phone</Text>
                     <TextInput
                         style={styles.input}
                         value={phone}
-                        onChangeText={setPhone}
+                        onChangeText={(t) => setPhone(t.replace(/\D/g, '').slice(0, 10))}
                         placeholder="10-digit phone number"
                         placeholderTextColor={Colors.dark.textSecondary}
                         keyboardType="phone-pad"
@@ -138,7 +141,7 @@ export default function EditProfileScreen() {
                     <TextInput
                         style={styles.input}
                         value={pincode}
-                        onChangeText={setPincode}
+                        onChangeText={(t) => setPincode(t.replace(/\D/g, '').slice(0, 6))}
                         placeholder="6-digit pincode"
                         placeholderTextColor={Colors.dark.textSecondary}
                         keyboardType="number-pad"
