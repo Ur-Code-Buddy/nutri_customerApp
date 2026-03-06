@@ -1,9 +1,11 @@
+import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Linking, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { orderService } from '../../services/api';
 
 export default function OrdersScreen() {
+    const router = useRouter();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -59,16 +61,22 @@ export default function OrdersScreen() {
         }
     };
 
+    const formatDate = (d: string | undefined) => {
+        if (!d) return '';
+        const date = new Date(d);
+        return isNaN(date.getTime()) ? '' : date.toLocaleDateString();
+    };
+
     const renderOrderItem = ({ item }: { item: any }) => {
-        const itemsSubtotal = item.items?.reduce((sum: number, o: any) =>
-            sum + Number(o.snapshot_price || 0) * (o.quantity || 0), 0) ?? 0;
-        const platformFee = Number(item.platform_fees) ?? 10;
-        const deliveryFee = Number(item.delivery_fees) ?? 20;
-        const totalPrice = Number(item.total_price) ?? itemsSubtotal + platformFee + deliveryFee;
-        const itemName = (o: any) => o.name ?? o.food_item?.name ?? 'Item';
+        const totalPrice = Number(item.total_price) ?? 0;
+        const itemCount = item.items?.reduce((sum: number, o: any) => sum + (o.quantity || 0), 0) ?? 0;
 
         return (
-            <View style={styles.card}>
+            <TouchableOpacity
+                style={styles.card}
+                onPress={() => router.push(`/order/${item.id}`)}
+                activeOpacity={0.85}
+            >
                 <View style={styles.header}>
                     <Text style={styles.kitchenName}>{item.kitchen?.name || 'Unknown Kitchen'}</Text>
                     <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '20' }]}>
@@ -77,9 +85,11 @@ export default function OrdersScreen() {
                 </View>
 
                 <View style={styles.dateRow}>
-                    <Text style={styles.date}>Ordered: {new Date(item.created_at).toLocaleDateString()}</Text>
                     {item.scheduled_for && (
                         <Text style={styles.date}>Scheduled: {item.scheduled_for}</Text>
+                    )}
+                    {formatDate(item.created_at) && (
+                        <Text style={styles.date}>{formatDate(item.created_at)}</Text>
                     )}
                 </View>
 
@@ -88,7 +98,8 @@ export default function OrdersScreen() {
                         <Text style={styles.driverLabel}>Driver: {item.delivery_driver.name}</Text>
                         <TouchableOpacity
                             style={styles.callDriverBtn}
-                            onPress={() => {
+                            onPress={(e) => {
+                                e.stopPropagation();
                                 const num = String(item.delivery_driver.phone_number || '').replace(/[^\d+]/g, '');
                                 if (!num) return;
                                 const url = num.startsWith('+') ? `tel:${num}` : `tel:+91${num}`;
@@ -102,36 +113,11 @@ export default function OrdersScreen() {
                     </View>
                 )}
 
-                <View style={styles.itemsContainer}>
-                    {item.items?.map((orderItem: any, index: number) => (
-                        <View key={index} style={styles.orderItemRow}>
-                            <Text style={styles.itemName}>{orderItem.quantity}x {itemName(orderItem)}</Text>
-                            <Text style={styles.itemPrice}>₹{(Number(orderItem.snapshot_price) * orderItem.quantity).toFixed(2)}</Text>
-                        </View>
-                    ))}
-                </View>
-
-                <View style={styles.divider} />
-
-                <View style={styles.feeSection}>
-                    <View style={styles.feeRow}>
-                        <Text style={styles.feeLabel}>Items subtotal</Text>
-                        <Text style={styles.feeValue}>₹{itemsSubtotal.toFixed(2)}</Text>
-                    </View>
-                    <View style={styles.feeRow}>
-                        <Text style={styles.feeLabel}>Platform fee</Text>
-                        <Text style={styles.feeValue}>₹{platformFee}</Text>
-                    </View>
-                    <View style={styles.feeRow}>
-                        <Text style={styles.feeLabel}>Delivery fee</Text>
-                        <Text style={styles.feeValue}>₹{deliveryFee}</Text>
-                    </View>
-                </View>
-                <View style={styles.totalRow}>
-                    <Text style={styles.totalLabel}>Total</Text>
+                <View style={styles.footer}>
+                    <Text style={styles.itemCount}>{itemCount} item{itemCount !== 1 ? 's' : ''}</Text>
                     <Text style={styles.totalAmount}>₹{totalPrice.toFixed(2)}</Text>
                 </View>
-            </View>
+            </TouchableOpacity>
         );
     };
 
@@ -229,16 +215,16 @@ const styles = StyleSheet.create({
     dateRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 12,
+        marginBottom: 8,
     },
     driverSection: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         backgroundColor: 'rgba(48, 209, 88, 0.12)',
-        padding: 12,
-        borderRadius: 10,
-        marginBottom: 12,
+        padding: 10,
+        borderRadius: 8,
+        marginBottom: 8,
         borderWidth: 1,
         borderColor: 'rgba(48, 209, 88, 0.3)',
     },
@@ -262,55 +248,21 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: Colors.dark.textSecondary,
     },
-    itemsContainer: {
-        marginBottom: 12,
-    },
-    orderItemRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 4,
-    },
-    itemName: {
-        color: Colors.dark.text,
-        fontSize: 14,
-    },
-    itemPrice: {
-        color: Colors.dark.textSecondary,
-        fontSize: 14,
-    },
-    divider: {
-        height: 1,
-        backgroundColor: Colors.dark.border,
-        marginBottom: 12,
-    },
-    feeSection: {
-        marginBottom: 8,
-    },
-    feeRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 4,
-    },
-    feeLabel: {
-        fontSize: 13,
-        color: Colors.dark.textSecondary,
-    },
-    feeValue: {
-        fontSize: 13,
-        color: Colors.dark.text,
-    },
-    totalRow: {
+    footer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        marginTop: 4,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: Colors.dark.border,
     },
-    totalLabel: {
-        fontSize: 14,
-        fontWeight: 'bold',
+    itemCount: {
+        fontSize: 13,
         color: Colors.dark.textSecondary,
     },
     totalAmount: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: 'bold',
         color: Colors.dark.primary,
     },

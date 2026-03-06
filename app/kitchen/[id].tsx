@@ -60,14 +60,30 @@ export default function KitchenDetailsScreen() {
         return cartItem ? cartItem.quantity : 0;
     };
 
+    const isVeg = (item: any) => {
+        if (item.is_veg === true || item.veg === true) return true;
+        if (item.is_veg === false || item.veg === false) return false;
+        if (item.type?.toLowerCase() === 'veg') return true;
+        if (item.type?.toLowerCase() === 'nonveg') return false;
+        return null;
+    };
+
     const renderMenuItem = ({ item }: { item: any }) => {
         const qty = getQuantity(item.id);
+        const veg = isVeg(item);
 
         return (
             <View style={styles.menuItem}>
                 <Image source={{ uri: item.image_url || 'https://via.placeholder.com/150' }} style={styles.menuImage} />
                 <View style={styles.menuContent}>
-                    <Text style={styles.menuName}>{item.name}</Text>
+                    <View style={styles.menuNameRow}>
+                        <Text style={styles.menuName}>{item.name}</Text>
+                        {veg !== null && (
+                            <View style={[styles.vegBadge, veg ? styles.vegBadgeGreen : styles.vegBadgeRed]}>
+                                <Text style={styles.vegBadgeText}>{veg ? 'Veg' : 'Non-Veg'}</Text>
+                            </View>
+                        )}
+                    </View>
                     <Text style={styles.menuDesc} numberOfLines={2}>{item.description}</Text>
                     <View style={styles.priceRow}>
                         <Text style={styles.price}>₹{item.price}</Text>
@@ -377,9 +393,34 @@ const styles = StyleSheet.create({
         marginLeft: 12,
         justifyContent: 'space-between',
     },
+    menuNameRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
     menuName: {
         fontSize: 16,
         fontWeight: 'bold',
+        color: Colors.dark.text,
+    },
+    vegBadge: {
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+    },
+    vegBadgeGreen: {
+        backgroundColor: 'rgba(48, 209, 88, 0.2)',
+        borderWidth: 1,
+        borderColor: Colors.dark.success,
+    },
+    vegBadgeRed: {
+        backgroundColor: 'rgba(255, 69, 58, 0.2)',
+        borderWidth: 1,
+        borderColor: '#FF453A',
+    },
+    vegBadgeText: {
+        fontSize: 10,
+        fontWeight: '600',
         color: Colors.dark.text,
     },
     menuDesc: {
